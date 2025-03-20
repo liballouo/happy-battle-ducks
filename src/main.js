@@ -14,6 +14,10 @@ class Game {
         this.towerImage = new Image();
         this.towerImage.src = './img/tower.webp';
         
+        // 加載敵方防禦塔圖片
+        this.enemyTowerImage = new Image();
+        this.enemyTowerImage.src = './img/enemy_tower.webp';
+        
         // 鴨子類型配置
         this.duckTypes = {
             basic: {
@@ -52,7 +56,9 @@ class Game {
 
         // 等待圖片加載完成後開始遊戲循環
         this.towerImage.onload = () => {
-            this.gameLoop();
+            this.enemyTowerImage.onload = () => {
+                this.gameLoop();
+            };
         };
     }
 
@@ -151,6 +157,12 @@ class Game {
         const towerX = 50;       // 防禦塔的X座標
         const towerY = this.canvas.height / 2 - towerHeight / 2; // 防禦塔的Y座標，置中
         this.ctx.drawImage(this.towerImage, towerX, towerY, towerWidth, towerHeight);
+        
+        const EnemyTowerWidth = 175;
+        const EnemyTowerHeight = 300;
+        // 繪製敵方防禦塔
+        const enemyTowerX = this.canvas.width - towerWidth - 50; // 右側對稱位置
+        this.ctx.drawImage(this.enemyTowerImage, enemyTowerX, towerY, EnemyTowerWidth, EnemyTowerHeight);
 
         // 繪製鴨子
         this.ducks.forEach(duck => {
