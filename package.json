@@ -1,0 +1,16 @@
+{
+  "name": "happy-battle-ducks",
+  "version": "1.0.0",
+  "description": "A 2D tower defense game with ducks",
+  "main": "index.js",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "gsap": "^3.12.5"
+  },
+  "devDependencies": {
+    "vite": "^5.1.4"
+  }
+} 
