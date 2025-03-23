@@ -1,145 +1,106 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Happy Battle Ducks</title>
+    <title>音樂防禦戰</title>
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            background: #87CEEB;
-            font-family: Arial, sans-serif;
-        }
-        #game-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-        #game-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 10px;
-            display: flex;
-            justify-content: space-between;
-            z-index: 100;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        #coins {
-            font-size: 24px;
-            font-weight: bold;
-        }
-        #settings-button {
-            padding: 5px 15px;
-            background: rgba(255,255,255,0.2);
-            border: 2px solid white;
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        #settings-button:hover {
-            background: rgba(255,255,255,0.4);
-        }
-        #game-canvas {
-            width: 100%;
-            height: 100%;
-            background: #87CEEB;
-        }
-        #game-footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            background: rgba(0,0,0,0.5);
-            z-index: 100;
-        }
-        .duck-button {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.2);
-            border: 2px solid white;
-            border-radius: 5px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s;
+            padding: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            min-width: 100px;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
         }
-        .duck-button:hover {
-            background: rgba(255,255,255,0.4);
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .duck-cost {
-            font-size: 12px;
-            margin-top: 5px;
+
+        #game-canvas {
+            background-color: #87CEEB;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin: 20px;
         }
-        #settings-menu {
-            position: absolute;
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .note-button {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .note-button:hover {
+            transform: scale(1.1);
+        }
+
+        #start-button {
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            padding: 20px;
-            border-radius: 10px;
+            padding: 15px 30px;
+            background-color: #4CAF50;
             color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        #start-button:hover {
+            background-color: #45a049;
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 0 30px rgba(0,0,0,0.4);
+        }
+
+        #start-button.hidden {
             display: none;
-            z-index: 200;
-        }
-        .settings-option {
-            margin: 10px 0;
-        }
-        .settings-option label {
-            display: block;
-            margin-bottom: 5px;
-        }
-        .settings-option input {
-            width: 100%;
-            padding: 5px;
         }
     </style>
 </head>
 <body>
     <div id="game-container">
-        <div id="game-header">
-            <div id="coins">Coins: <span id="coins-value">100</span></div>
-            <button id="settings-button">⚙️ Settings</button>
-        </div>
+        <button id="start-button">開始遊戲</button>
         <canvas id="game-canvas"></canvas>
-        <div id="game-footer">
-            <button class="duck-button" data-duck="basic">
-                <span>Basic Duck</span>
-                <span class="duck-cost">Cost: 50</span>
-            </button>
-            <button class="duck-button" data-duck="fast">
-                <span>Fast Duck</span>
-                <span class="duck-cost">Cost: 75</span>
-            </button>
-            <button class="duck-button" data-duck="tank">
-                <span>Tank Duck</span>
-                <span class="duck-cost">Cost: 100</span>
-            </button>
-        </div>
-        <div id="settings-menu">
-            <h2>Settings</h2>
-            <div class="settings-option">
-                <label for="game-speed">Game Speed:</label>
-                <input type="range" id="game-speed" min="0.5" max="2" step="0.1" value="1">
-            </div>
-            <div class="settings-option">
-                <label for="coin-rate">Coin Rate:</label>
-                <input type="range" id="coin-rate" min="0.5" max="2" step="0.1" value="1">
-            </div>
-            <button id="close-settings">Close</button>
+        <div id="controls">
+            <button class="note-button" data-note="C" style="background-color: #FFD700;">Do</button>
+            <button class="note-button" data-note="D" style="background-color: #FF69B4;">Re</button>
+            <button class="note-button" data-note="E" style="background-color: #4169E1;">Mi</button>
+            <button class="note-button" data-note="F" style="background-color: #32CD32;">Fa</button>
+            <button class="note-button" data-note="G" style="background-color: #FF4500;">So</button>
+            <button class="note-button" data-note="A" style="background-color: #9370DB;">La</button>
+            <button class="note-button" data-note="B" style="background-color: #FF1493;">Ti</button>
+            <button class="note-button" data-note="C2" style="background-color: #FFD700;">Do</button>
         </div>
     </div>
     <script type="module" src="/src/main.js"></script>

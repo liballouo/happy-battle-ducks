@@ -2,14 +2,35 @@ class Game {
     constructor() {
         this.canvas = document.getElementById('game-canvas');
         this.ctx = this.canvas.getContext('2d');
-        this.coins = 1000;
-        this.coinRate = 2; // 每秒增加的金幣數
-        this.gameSpeed = 1;
-        this.isPaused = false;
         this.ducks = [];
-        this.enemies = [];
-        this.lastCoinUpdate = Date.now();
+        this.sequence = [];
+        this.currentIndex = 0;
+        this.isPlaying = false;
+        this.isSuccess = false;
+        this.lastInputTime = 0;
+        this.inputDelay = 100; // 500毫秒的輸入延遲
         
+        // 生日快樂歌的音符序列
+        this.birthdaySong = ['C', 'C', 'D', 'C', 'F', 'E', 'C', 'C', 'D', 'C', 'G', 'F'];
+        
+        // 音符配置
+        this.notes = {
+            'C': { color: '#FFD700', sound: 'do' },
+            'D': { color: '#FF69B4', sound: 're' },
+            'E': { color: '#4169E1', sound: 'mi' },
+            'F': { color: '#32CD32', sound: 'fa' },
+            'G': { color: '#FF4500', sound: 'so' },
+            'A': { color: '#9370DB', sound: 'la' },
+            'B': { color: '#FF1493', sound: 'ti' },
+            'C2': { color: '#FFD700', sound: 'do2' }
+        };
+
+        // 加載音效
+        this.sounds = {};
+        Object.keys(this.notes).forEach(note => {
+            this.sounds[note] = new Audio(`./sounds/${this.notes[note].sound}.mp3`);
+        });
+
         // 加載防禦塔圖片
         this.towerImage = new Image();
         this.towerImage.src = './img/tower.webp';
@@ -17,31 +38,6 @@ class Game {
         // 加載敵方防禦塔圖片
         this.enemyTowerImage = new Image();
         this.enemyTowerImage.src = './img/enemy_tower.webp';
-        
-        // 鴨子類型配置
-        this.duckTypes = {
-            basic: {
-                cost: 50,
-                speed: 2,
-                health: 100,
-                damage: 20,
-                color: '#FFD700'
-            },
-            fast: {
-                cost: 75,
-                speed: 3,
-                health: 80,
-                damage: 15,
-                color: '#FF69B4'
-            },
-            tank: {
-                cost: 100,
-                speed: 1,
-                health: 200,
-                damage: 30,
-                color: '#4169E1'
-            }
-        };
 
         this.init();
     }
@@ -68,79 +64,79 @@ class Game {
     }
 
     setupEventListeners() {
-        // 鴨子按鈕點擊事件
-        document.querySelectorAll('.duck-button').forEach(button => {
+        // 音符按鈕點擊事件
+        document.querySelectorAll('.note-button').forEach(button => {
             button.addEventListener('click', () => {
-                const duckType = button.dataset.duck;
-                this.spawnDuck(duckType);
+                const note = button.dataset.note;
+                this.spawnDuck(note);
             });
         });
 
-        // 設置按鈕事件
-        const settingsButton = document.getElementById('settings-button');
-        const settingsMenu = document.getElementById('settings-menu');
-        const closeSettings = document.getElementById('close-settings');
-
-        settingsButton.addEventListener('click', () => {
-            settingsMenu.style.display = 'block';
-            this.isPaused = true;
-        });
-
-        closeSettings.addEventListener('click', () => {
-            settingsMenu.style.display = 'none';
-            this.isPaused = false;
-        });
-
-        // 設置選項事件
-        document.getElementById('game-speed').addEventListener('input', (e) => {
-            this.gameSpeed = parseInt(e.target.value);
-        });
-
-        document.getElementById('coin-rate').addEventListener('input', (e) => {
-            this.coinRate = parseInt(e.target.value);
+        // 開始遊戲按鈕
+        document.getElementById('start-button').addEventListener('click', () => {
+            this.startGame();
         });
     }
 
-    spawnDuck(type) {
-        const duckConfig = this.duckTypes[type];
-        if (this.coins >= duckConfig.cost) {
-            this.coins -= duckConfig.cost;
-            this.updateCoinsDisplay();
-            
-            // 計算塔的底部位置
-            const towerBottomY = this.canvas.height / 2 + 150; // towerHeight/2
-            
-            // 生成隨機的Y座標偏移（在塔底部下方-50到+50的範圍內）
-            const randomYOffset = Math.random() * 100 - 75;
-            
-            const duck = {
-                type,
-                x: 180,
-                y: towerBottomY + randomYOffset,
-                ...duckConfig
-            };
-            this.ducks.push(duck);
+    startGame() {
+        this.sequence = [...this.birthdaySong];
+        this.currentIndex = 0;
+        this.isPlaying = true;
+        this.isSuccess = false;
+        this.ducks = [];
+        this.lastInputTime = 0;
+        // 隱藏開始按鈕
+        document.getElementById('start-button').classList.add('hidden');
+    }
+
+    spawnDuck(note) {
+        if (!this.isPlaying) return;
+
+        // 檢查輸入延遲
+        const currentTime = Date.now();
+        if (currentTime - this.lastInputTime < this.inputDelay) return;
+        this.lastInputTime = currentTime;
+
+        // 播放音效
+        if (this.sounds[note]) {
+            this.sounds[note].currentTime = 0;
+            this.sounds[note].play();
         }
-    }
 
-    updateCoinsDisplay() {
-        document.getElementById('coins-value').textContent = this.coins;
+        // 檢查是否正確
+        const isCorrect = note === this.sequence[this.currentIndex];
+        
+        // 創建鴨子
+        const duck = {
+            note,
+            x: 180,
+            y: this.canvas.height / 2 + 150,
+            isCorrect,
+            scale: 1
+        };
+        this.ducks.push(duck);
+
+        if (isCorrect) {
+            this.currentIndex++;
+            if (this.currentIndex >= this.sequence.length) {
+                this.isSuccess = true;
+                this.isPlaying = false;
+                // 顯示開始按鈕
+                document.getElementById('start-button').classList.remove('hidden');
+            }
+        } else {
+            // 重置當前索引，重新開始序列
+            this.currentIndex = 0;
+            // 清空所有鴨子
+            this.ducks = [];
+        }
     }
 
     update() {
-        if (this.isPaused) return;
-
-        // 更新金幣
-        const now = Date.now();
-        if (now - this.lastCoinUpdate >= 1000) {
-            this.coins += this.coinRate;
-            this.updateCoinsDisplay();
-            this.lastCoinUpdate = now;
-        }
-
-        // 更新鴨子位置
+        // 更新鴨子位置和動畫
         this.ducks.forEach(duck => {
-            duck.x += duck.speed * this.gameSpeed;
+            duck.x += 2;
+            duck.scale = 1 + Math.sin(Date.now() / 200) * 0.1;
         });
 
         // 移除超出畫布的鴨子
@@ -166,11 +162,31 @@ class Game {
 
         // 繪製鴨子
         this.ducks.forEach(duck => {
-            this.ctx.fillStyle = duck.color;
+            this.ctx.save();
+            this.ctx.translate(duck.x, duck.y);
+            this.ctx.scale(duck.scale, duck.scale);
+
+            // 繪製鴨子身體
+            this.ctx.fillStyle = this.notes[duck.note].color;
             this.ctx.beginPath();
-            this.ctx.arc(duck.x, duck.y, 20, 0, Math.PI * 2);
+            this.ctx.arc(0, 0, 20, 0, Math.PI * 2);
             this.ctx.fill();
+
+            // 繪製音符
+            this.ctx.fillStyle = '#000';
+            this.ctx.font = '20px Arial';
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline = 'middle';
+            this.ctx.fillText(duck.note, 0, 0);
+
+            this.ctx.restore();
         });
+
+        // 繪製成功動畫
+        if (this.isSuccess) {
+            this.ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
     }
 
     gameLoop() {
